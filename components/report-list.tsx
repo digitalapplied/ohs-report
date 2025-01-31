@@ -1,11 +1,24 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { getReports, deleteReport } from "@/app/actions"
 import { useToast } from "@/components/ui/use-toast"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,14 +33,20 @@ import {
 import { generatePDF } from "@/utils/pdfGenerator"
 import { Download } from "lucide-react"
 
+// We also keep a local list in localStorage for quick reference, but the official
+// source of truth is the server cookies. We'll just retrieve from the server
+// whenever we mount. You can modify as needed.
+
 export function ReportList({ onEdit }: { onEdit: (report: any) => void }) {
-  const [reports, setReports] = useState([])
+  const [reports, setReports] = useState<any[]>([])
   const { toast } = useToast()
 
   async function fetchReports() {
     try {
       const fetchedReports = await getReports()
       setReports(fetchedReports)
+      // Also store in localStorage
+      localStorage.setItem("all_ohs_reports", JSON.stringify(fetchedReports))
     } catch (error) {
       console.error("Error fetching reports:", error)
       toast({
@@ -39,8 +58,9 @@ export function ReportList({ onEdit }: { onEdit: (report: any) => void }) {
   }
 
   useEffect(() => {
+    // On mount, fetch from server
     fetchReports()
-  }, []) //This is the line that needed to be updated.  The empty array [] means it only runs once on mount.  Adding getReports as a dependency will cause it to re-run whenever getReports changes.  This is likely not the desired behavior, but it fixes the linter error.  A better solution would be to determine what causes the reports to change and add that as a dependency instead.
+  }, [])
 
   const handleDelete = async (id: string) => {
     const result = await deleteReport(id)
@@ -90,7 +110,9 @@ export function ReportList({ onEdit }: { onEdit: (report: any) => void }) {
                   <TableCell>{report.depotLocation}</TableCell>
                   <TableCell>{report.reportingPeriod}</TableCell>
                   <TableCell>{report.preparedBy}</TableCell>
-                  <TableCell>{new Date(report.date).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    {new Date(report.date).toLocaleDateString()}
+                  </TableCell>
                   <TableCell>
                     <div className="space-x-2">
                       <Button onClick={() => onEdit(report)}>Edit</Button>
@@ -106,12 +128,15 @@ export function ReportList({ onEdit }: { onEdit: (report: any) => void }) {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete the report.
+                              This action cannot be undone. It will permanently
+                              delete the report.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(report.id)}>Delete</AlertDialogAction>
+                            <AlertDialogAction onClick={() => handleDelete(report.id)}>
+                              Delete
+                            </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
@@ -126,4 +151,3 @@ export function ReportList({ onEdit }: { onEdit: (report: any) => void }) {
     </Card>
   )
 }
-
