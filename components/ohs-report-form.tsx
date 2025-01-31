@@ -1,20 +1,20 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { format } from "date-fns"
-import { CalendarIcon, InfoIcon } from "lucide-react"
+import { useState, useEffect } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { format } from "date-fns";
+import { CalendarIcon, InfoIcon } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -22,33 +22,43 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/components/ui/use-toast"
-import { submitReport, editReport, type ApiResponse } from "@/app/actions"
-import { cn } from "@/lib/utils"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
+import { submitReport, editReport, type ApiResponse } from "@/app/actions";
+import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from "@/components/ui/tooltip";
 
 /**
  * Below is the expanded schema, including all sections from the revised template.
  * Each field is validated for at least minimal presence or length.
  */
 const ohsReportSchema = z.object({
-  depotLocation: z.string().min(2, "Depot location must be at least 2 characters."),
-  reportingPeriod: z.string().min(2, "Reporting period must be at least 2 characters."),
+  depotLocation: z
+    .string()
+    .min(2, "Depot location must be at least 2 characters."),
+  reportingPeriod: z
+    .string()
+    .min(2, "Reporting period must be at least 2 characters."),
   preparedBy: z.string().min(2, "Prepared by must be at least 2 characters."),
   date: z.date({ required_error: "A date is required." }),
 
   executiveSummary: z.object({
-    purposeOfReport: z.string().min(10, "Provide an overview (at least 10 characters)."),
+    purposeOfReport: z
+      .string()
+      .min(10, "Provide an overview (at least 10 characters)."),
     keyHighlights: z.object({
       injuryReduction: z.string().min(1, "Required."),
       safetyTraining: z.string().min(1, "Required."),
@@ -57,7 +67,9 @@ const ohsReportSchema = z.object({
     }),
   }),
 
-  policyStatement: z.string().min(10, "Policy statement must be at least 10 characters."),
+  policyStatement: z
+    .string()
+    .min(10, "Policy statement must be at least 10 characters."),
 
   // 3. Health and Safety Performance
   healthAndSafetyPerformance: z.object({
@@ -138,25 +150,27 @@ const ohsReportSchema = z.object({
 
   // 12. Sign-Off
   signOff: z.object({
-    inspectorName: z.string().min(2, "Inspector name must be at least 2 characters."),
+    inspectorName: z
+      .string()
+      .min(2, "Inspector name must be at least 2 characters."),
     inspectorSignature: z.string().optional(),
   }),
 
   // Additional notes/appendices
   appendices: z.string().optional(),
-})
+});
 
-type OHSReportFormValues = z.infer<typeof ohsReportSchema>
+type OHSReportFormValues = z.infer<typeof ohsReportSchema>;
 
 export default function OHSReportForm({
   reportToEdit,
   onSubmitSuccess,
 }: {
-  reportToEdit?: any
-  onSubmitSuccess?: () => void
+  reportToEdit?: any;
+  onSubmitSuccess?: () => void;
 }) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const { toast } = useToast()
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   // Initialize the form
   const form = useForm<OHSReportFormValues>({
@@ -273,7 +287,7 @@ export default function OHSReportForm({
           // Additional
           appendices: "",
         },
-  })
+  });
 
   // If editing an existing report, reset form on mount or when `reportToEdit` changes
   useEffect(() => {
@@ -281,44 +295,44 @@ export default function OHSReportForm({
       form.reset({
         ...reportToEdit,
         date: new Date(reportToEdit.date),
-      })
+      });
     }
-  }, [reportToEdit, form])
+  }, [reportToEdit, form]);
 
   // Attempt to store in localStorage for "offline" or local usage
   useEffect(() => {
     // On mount, load from localStorage if it exists
-    const stored = localStorage.getItem("draft_ohs_report")
+    const stored = localStorage.getItem("draft_ohs_report");
     if (stored && !reportToEdit) {
       try {
-        const parsed = JSON.parse(stored)
+        const parsed = JSON.parse(stored);
         // Only reset if the user is not editing an existing record
         form.reset({
           ...form.getValues(),
           ...parsed,
           date: parsed?.date ? new Date(parsed.date) : new Date(),
-        })
+        });
       } catch (err) {
         // ignore
       }
     }
-  }, [form, reportToEdit])
+  }, [form, reportToEdit]);
 
   // Save current form data to local storage whenever the form changes
   useEffect(() => {
     const subscription = form.watch((values) => {
-      localStorage.setItem("draft_ohs_report", JSON.stringify(values))
-    })
-    return () => subscription.unsubscribe()
-  }, [form])
+      localStorage.setItem("draft_ohs_report", JSON.stringify(values));
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   async function onSubmit(values: OHSReportFormValues) {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
       const result: ApiResponse =
         reportToEdit && reportToEdit.id
           ? await editReport(reportToEdit.id, values)
-          : await submitReport(values)
+          : await submitReport(values);
 
       if (result.success) {
         toast({
@@ -328,12 +342,92 @@ export default function OHSReportForm({
             : result.reportId
             ? `Your report has been successfully submitted (ID: ${result.reportId}).`
             : "Your report has been successfully submitted.",
-        })
-        form.reset()
-        localStorage.removeItem("draft_ohs_report") // clear the local draft
-        onSubmitSuccess && onSubmitSuccess()
+        });
+        // Reset form to initial default values
+        form.reset({
+          depotLocation: "",
+          reportingPeriod: "",
+          preparedBy: "",
+          date: new Date(),
+          executiveSummary: {
+            purposeOfReport: "",
+            keyHighlights: {
+              injuryReduction: "",
+              safetyTraining: "",
+              emergencyDrills: "",
+              riskAssessmentCompletion: "",
+            },
+          },
+          policyStatement: "",
+          healthAndSafetyPerformance: {
+            incidentSummary: {
+              totalIncidents: "",
+              minorInjuries: "",
+              majorAccidents: "",
+              ltifr: "",
+              trir: "",
+            },
+            yearOnYearComparison: "",
+            leadingIndicators: "",
+          },
+          safetyTraining: {
+            trainingInitiatives: {
+              employeesTrained: "",
+              topicsCovered: "",
+              specializedTraining: "",
+            },
+            newHireOrientation: "",
+            refresherCourses: "",
+          },
+          hazardIdentification: {
+            riskAssessments: {
+              completionRate: "",
+              methodology: "",
+            },
+            topHazards: "",
+            controlMeasures: "",
+          },
+          incidentInvestigations: {
+            totalInvestigated: "",
+            rootCauses: "",
+            correctiveActions: "",
+            followUpVerification: "",
+          },
+          emergencyPreparedness: {
+            drills: {
+              drillsConducted: "",
+              participationRate: "",
+              evacuationSuccessRate: "",
+            },
+            firstAidCapabilities: "",
+            emergencyResponsePlans: "",
+          },
+          ppeAndEquipment: {
+            ppeCompliance: {
+              complianceRate: "",
+              ppeTypes: "",
+            },
+            equipmentInspections: "",
+          },
+          employeeHealth: {
+            wellnessInitiatives: "",
+            campaignsAndAwareness: "",
+          },
+          challenges: {
+            keyChallenges: "",
+            proposedImprovements: "",
+          },
+          recommendations: "",
+          signOff: {
+            inspectorName: "",
+            inspectorSignature: "",
+          },
+          appendices: "",
+        });
+        localStorage.removeItem("draft_ohs_report"); // clear the local draft
+        onSubmitSuccess && onSubmitSuccess();
       } else if (result.error) {
-        throw new Error(result.error)
+        throw new Error(result.error);
       }
     } catch (error: any) {
       toast({
@@ -343,9 +437,9 @@ export default function OHSReportForm({
             ? error.message
             : "There was an error submitting your report. Please try again.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
   }
 
@@ -353,7 +447,9 @@ export default function OHSReportForm({
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle>
-          {reportToEdit ? "Edit Report" : "Annual Occupational Health and Safety Report"}
+          {reportToEdit
+            ? "Edit Report"
+            : "Annual Occupational Health and Safety Report"}
         </CardTitle>
         <CardDescription>
           {reportToEdit
@@ -587,10 +683,7 @@ export default function OHSReportForm({
                       <FormItem>
                         <FormLabel>Total Number of Incidents</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="e.g., 5 incidents"
-                            {...field}
-                          />
+                          <Input placeholder="e.g., 5 incidents" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -639,8 +732,8 @@ export default function OHSReportForm({
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p>
-                                  LTIFR = # of lost-time injuries per
-                                  1,000,000 hours worked
+                                  LTIFR = # of lost-time injuries per 1,000,000
+                                  hours worked
                                 </p>
                               </TooltipContent>
                             </Tooltip>
@@ -727,9 +820,13 @@ export default function OHSReportForm({
 
             {/* =============== 4. SAFETY TRAINING AND EDUCATION =============== */}
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold">4. Safety Training and Education</h2>
+              <h2 className="text-lg font-semibold">
+                4. Safety Training and Education
+              </h2>
 
-              <h3 className="text-md font-semibold">4.1 Training Initiatives</h3>
+              <h3 className="text-md font-semibold">
+                4.1 Training Initiatives
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -817,7 +914,9 @@ export default function OHSReportForm({
 
             {/* =============== 5. HAZARD IDENTIFICATION AND RISK ASSESSMENT =============== */}
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold">5. Hazard Identification and Risk Assessment</h2>
+              <h2 className="text-lg font-semibold">
+                5. Hazard Identification and Risk Assessment
+              </h2>
               <h3 className="text-md font-semibold">5.1 Risk Assessments</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
@@ -891,7 +990,9 @@ export default function OHSReportForm({
 
             {/* =============== 6. INCIDENT INVESTIGATIONS AND CORRECTIVE ACTIONS =============== */}
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold">6. Incident Investigations and Corrective Actions</h2>
+              <h2 className="text-lg font-semibold">
+                6. Incident Investigations and Corrective Actions
+              </h2>
               <FormField
                 control={form.control}
                 name="incidentInvestigations.totalInvestigated"
@@ -963,7 +1064,9 @@ export default function OHSReportForm({
 
             {/* =============== 7. EMERGENCY PREPAREDNESS =============== */}
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold">7. Emergency Preparedness</h2>
+              <h2 className="text-lg font-semibold">
+                7. Emergency Preparedness
+              </h2>
 
               <h3 className="text-md font-semibold">7.1 Emergency Drills</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -974,10 +1077,7 @@ export default function OHSReportForm({
                     <FormItem>
                       <FormLabel>Drills Conducted</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="e.g., 4"
-                          {...field}
-                        />
+                        <Input placeholder="e.g., 4" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -990,10 +1090,7 @@ export default function OHSReportForm({
                     <FormItem>
                       <FormLabel>Participation Rate</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="e.g., 80%"
-                          {...field}
-                        />
+                        <Input placeholder="e.g., 80%" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1022,7 +1119,9 @@ export default function OHSReportForm({
                 name="emergencyPreparedness.firstAidCapabilities"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>7.2 First Aid and Response Capabilities</FormLabel>
+                    <FormLabel>
+                      7.2 First Aid and Response Capabilities
+                    </FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Number of Certified First Aiders, frequency of kit inspections, etc."
@@ -1053,7 +1152,9 @@ export default function OHSReportForm({
 
             {/* =============== 8. PPE & EQUIPMENT MANAGEMENT =============== */}
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold">8. PPE and Equipment Management</h2>
+              <h2 className="text-lg font-semibold">
+                8. PPE and Equipment Management
+              </h2>
               <h3 className="text-md font-semibold">8.1 PPE Compliance</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
@@ -1110,7 +1211,9 @@ export default function OHSReportForm({
 
             {/* =============== 9. EMPLOYEE HEALTH AND WELLNESS PROGRAMS =============== */}
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold">9. Employee Health and Wellness Programs</h2>
+              <h2 className="text-lg font-semibold">
+                9. Employee Health and Wellness Programs
+              </h2>
               <FormField
                 control={form.control}
                 name="employeeHealth.wellnessInitiatives"
@@ -1148,7 +1251,9 @@ export default function OHSReportForm({
 
             {/* =============== 10. CHALLENGES AND AREAS FOR IMPROVEMENT =============== */}
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold">10. Challenges and Areas for Improvement</h2>
+              <h2 className="text-lg font-semibold">
+                10. Challenges and Areas for Improvement
+              </h2>
               <FormField
                 control={form.control}
                 name="challenges.keyChallenges"
@@ -1207,7 +1312,9 @@ export default function OHSReportForm({
 
             {/* =============== 12. SIGN-OFF =============== */}
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold">12. Sign-Off and Compliance Statement</h2>
+              <h2 className="text-lg font-semibold">
+                12. Sign-Off and Compliance Statement
+              </h2>
               <FormField
                 control={form.control}
                 name="signOff.inspectorName"
@@ -1232,10 +1339,7 @@ export default function OHSReportForm({
                   <FormItem>
                     <FormLabel>Inspector Signature (optional)</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Type or leave blank"
-                        {...field}
-                      />
+                      <Input placeholder="Type or leave blank" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1278,5 +1382,5 @@ export default function OHSReportForm({
         </Form>
       </CardContent>
     </Card>
-  )
+  );
 }
